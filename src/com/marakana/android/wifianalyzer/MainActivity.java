@@ -4,13 +4,11 @@ import java.util.List;
 
 import org.achartengine.ChartFactory;
 import org.achartengine.chart.BarChart;
-import org.achartengine.chart.PointStyle;
 import org.achartengine.model.XYMultipleSeriesDataset;
 import org.achartengine.model.XYSeries;
 import org.achartengine.renderer.SimpleSeriesRenderer;
 import org.achartengine.renderer.XYMultipleSeriesRenderer;
 import org.achartengine.renderer.XYSeriesRenderer;
-import org.achartengine.renderer.XYMultipleSeriesRenderer.Orientation;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -18,6 +16,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
+import android.graphics.Paint.Align;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -44,6 +43,9 @@ public class MainActivity extends Activity {
 		wifiManager = (WifiManager) getSystemService(WIFI_SERVICE);
 		if (!wifiManager.isWifiEnabled()) {
 			startActivity(new Intent(WifiManager.ACTION_PICK_WIFI_NETWORK));
+		} else {
+			// Request a scan
+			wifiManager.startScan();
 		}
 	}
 
@@ -76,11 +78,14 @@ public class MainActivity extends Activity {
 		public void onReceive(Context context, Intent intent) {
 			Log.d(TAG, "scanReceiver received!");
 			// Refreshes the chart once we have scan results
-			View chartView = ChartFactory.getLineChartView(MainActivity.this,
-					getDataset(), renderer);
+			View chartView = ChartFactory.getBarChartView(MainActivity.this,
+					getDataset(), renderer, BarChart.Type.STACKED);
 
 			chartLayout.removeAllViews();
 			chartLayout.addView(chartView);
+
+			// Request a scan again
+			wifiManager.startScan();
 		}
 	};
 
@@ -88,6 +93,12 @@ public class MainActivity extends Activity {
 		XYMultipleSeriesDataset dataset = new XYMultipleSeriesDataset();
 
 		renderer = getRenderer();
+		renderer.setShowGrid(true);
+		renderer.setBarSpacing(0.20000000000000001D);
+		renderer.setChartTitle("WiFi Scanner");
+		renderer.setXTitle("WiFi Beacon");
+		renderer.setYTitle("SNR");
+
 		List<ScanResult> results = wifiManager.getScanResults();
 
 		XYSeries series = new XYSeries("Scan Results");
@@ -95,8 +106,10 @@ public class MainActivity extends Activity {
 		int i = 1;
 		for (ScanResult result : results) {
 			i++;
+
 			series.add(i, result.level);
 			renderer.addXTextLabel(i, result.SSID);
+
 		}
 		dataset.addSeries(series);
 
@@ -107,19 +120,34 @@ public class MainActivity extends Activity {
 		XYMultipleSeriesRenderer renderer = new XYMultipleSeriesRenderer();
 		renderer.setAxisTitleTextSize(20);
 		renderer.setChartTitleTextSize(20);
-		renderer.setLabelsTextSize(20);
+		renderer.setLabelsTextSize(22);
 		renderer.setLegendTextSize(20);
 		renderer.setPointSize(10f);
-		renderer.setMargins(new int[] { 0, 0, 0, 0 });
-		XYSeriesRenderer r = new XYSeriesRenderer();
+		renderer.setXLabelsAngle(270);
+		renderer.setXLabelsAlign(Align.LEFT);
+		renderer.setMargins(new int[] { 20, 30, 15, 0 });
+		renderer.setBackgroundColor(Color.BLUE);
+		SimpleSeriesRenderer r = new XYSeriesRenderer();
+		renderer.setYAxisMax(-110);
+		renderer.setYAxisMin(0);
+		renderer.setXAxisMin(1);
+		renderer.setXAxisMax(15);
+		renderer.setShowAxes(true);
+		renderer.setShowLegend(true);
+		renderer.setShowGridX(true);
+		renderer.setXLabels(15);
+		renderer.setYLabels(15);
+
+		renderer.setClickEnabled(false);
+		renderer.setExternalZoomEnabled(false);
+		renderer.setPanEnabled(true, false);
+		renderer.setZoomEnabled(false, false);
+		r.setDisplayChartValues(true);
+		r.setChartValuesTextSize(20);
 		r.setColor(Color.BLUE);
-		r.setPointStyle(PointStyle.CIRCLE);
-		r.setFillBelowLine(true);
-		r.setFillBelowLineColor(Color.WHITE);
-		r.setFillPoints(true);
+
 		renderer.addSeriesRenderer(r);
-		renderer.setAxesColor(Color.DKGRAY);
-		renderer.setLabelsColor(Color.LTGRAY);
+		renderer.setAxesColor(Color.WHITE);
 
 		return renderer;
 	}
