@@ -23,7 +23,6 @@
 # Generated code #
 ##################
 obj/*
-libs/*
 bin/*
 gen/*
 
